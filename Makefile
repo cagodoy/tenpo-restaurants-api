@@ -1,18 +1,18 @@
 #
 # SO variables
 #
-# GITHUB_USER
-# GITHUB_TOKEN
+# DOCKER_USER
+# DOCKER_TOKEN
 #
 
 #
 # Internal variables
 #
-VERSION=0.0.1
+VERSION=0.0.2
 SVC=tenpo-restaurants-api
 BIN_PATH=$(PWD)/bin
 BIN=$(BIN_PATH)/$(SVC)
-GITHUB_REGISTRY_URL=docker.pkg.github.com/$(GITHUB_USER)/$(SVC)
+REGISTRY_URL=$(DOCKER_USER)
 
 clean c:
 	@echo "[clean] Cleaning bin folder..."
@@ -20,7 +20,7 @@ clean c:
 
 run r:
 	@echo "[running] Running service..."
-	@go run cmd/main.go
+	@PORT=5030 NATS_HOST=localhost NATS_PORT=4222 API_KEY=<api_key> go run cmd/main.go
 
 build b:
 	@echo "[build] Building service..."
@@ -44,12 +44,12 @@ migrations m:
 
 docker-login dl:
 	@echo "[docker] Login to docker..."
-	@docker login docker.pkg.github.com -u $(GITHUB_USER) -p $(GITHUB_TOKEN)
+	@docker login -u $(DOCKER_USER) -p $(DOCKER_PASS)
 
 push p: linux docker docker-login
-	@echo "[docker] pushing $(GITHUB_REGISTRY_URL)/$(SVC):$(VERSION)"
-	@docker tag $(SVC):$(VERSION) $(GITHUB_REGISTRY_URL)/$(SVC):$(VERSION)
-	@docker push $(GITHUB_REGISTRY_URL)/$(SVC):$(VERSION)
+	@echo "[docker] pushing $(REGISTRY_URL)/$(SVC):$(VERSION)"
+	@docker tag $(SVC):$(VERSION) $(REGISTRY_URL)/$(SVC):$(VERSION)
+	@docker push $(REGISTRY_URL)/$(SVC):$(VERSION)
 
 compose co:
 	@echo "[docker-compose] Running docker-compose..."
