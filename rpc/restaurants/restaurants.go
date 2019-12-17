@@ -3,12 +3,15 @@ package restaurantssvc
 import (
 	"context"
 	"fmt"
+	"log"
 
 	pb "github.com/cagodoy/tenpo-challenge/lib/proto"
 	restaurants "github.com/cagodoy/tenpo-restaurants-api"
 	"github.com/cagodoy/tenpo-restaurants-api/service"
 
 	"googlemaps.github.io/maps"
+
+	nats "github.com/nats-io/nats.go"
 )
 
 var _ pb.RestaurantServiceServer = (*Service)(nil)
@@ -19,9 +22,9 @@ type Service struct {
 }
 
 // New ...
-func New() *Service {
+func New(conn *nats.EncodedConn) *Service {
 	return &Service{
-		restaurantsSvc: service.NewRestaurants(),
+		restaurantsSvc: service.NewRestaurants(conn),
 	}
 }
 
@@ -51,7 +54,7 @@ func (as *Service) ListByCoord(ctx context.Context, gr *pb.RestaurantListByCoord
 
 	listedRestaurants, nextPageToken, err := as.restaurantsSvc.ListByCoord(c, pageToken)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("[GRPC][RestaurantsService][ListByCoord][Error] %v", err))
+		log.Println(fmt.Sprintf("[GRPC][RestaurantsService][ListByCoord][Error] %v", err))
 		return &pb.RestaurantListByCoordResponse{
 			Data: nil,
 			Meta: nil,
@@ -75,6 +78,6 @@ func (as *Service) ListByCoord(ctx context.Context, gr *pb.RestaurantListByCoord
 		Error: nil,
 	}
 
-	fmt.Println(fmt.Sprintf("[GRPC][RestaurantsService][List][Response] Listed %v restaurants", len(res.Data)))
+	log.Println(fmt.Sprintf("[GRPC][RestaurantsService][List][Response] Listed %v restaurants", len(res.Data)))
 	return res, nil
 }
