@@ -41,7 +41,7 @@ message RestaurantListByCoordResponse {
 
 `make linux`: build restaurants service for linux os.
 
-`make docker .`: build docker.
+`make docker`: build docker.
 
 `docker run -it -p 5030:5030 tenpo-restaurants-api`: run docker.
 
