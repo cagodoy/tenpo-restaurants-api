@@ -33,11 +33,15 @@ func (as *Service) ListByCoord(ctx context.Context, gr *pb.RestaurantListByCoord
 	lat := gr.GetCoord().GetLatitude()
 	lng := gr.GetCoord().GetLongitude()
 
-	_, err := maps.ParseLatLng(lat + "," + lng)
+	c := restaurants.Coord{
+		Latitude:  lat,
+		Longitude: lng,
+	}
+
+	_, err := maps.ParseLatLng(c.GetLatLngStr())
 	if err != nil {
 		return &pb.RestaurantListByCoordResponse{
 			Data: nil,
-			Meta: nil,
 			Error: &pb.Error{
 				Code:    500,
 				Message: "invalid coord values",
@@ -45,19 +49,13 @@ func (as *Service) ListByCoord(ctx context.Context, gr *pb.RestaurantListByCoord
 		}, nil
 	}
 
-	c := restaurants.Coord{
-		Latitude:  lat,
-		Longitude: lng,
-	}
+	userID := gr.GetUserId()
 
-	pageToken := gr.GetPageToken()
-
-	listedRestaurants, nextPageToken, err := as.restaurantsSvc.ListByCoord(c, pageToken)
+	listedRestaurants, err := as.restaurantsSvc.ListByCoord(c, userID)
 	if err != nil {
 		log.Println(fmt.Sprintf("[GRPC][RestaurantsService][ListByCoord][Error] %v", err))
 		return &pb.RestaurantListByCoordResponse{
 			Data: nil,
-			Meta: nil,
 			Error: &pb.Error{
 				Code:    500,
 				Message: err.Error(),
@@ -71,10 +69,7 @@ func (as *Service) ListByCoord(ctx context.Context, gr *pb.RestaurantListByCoord
 	}
 
 	res := &pb.RestaurantListByCoordResponse{
-		Data: data,
-		Meta: &pb.MetaRestaurantListByCoord{
-			PageToken: nextPageToken,
-		},
+		Data:  data,
 		Error: nil,
 	}
 
