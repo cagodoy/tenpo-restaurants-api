@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	restaurants "github.com/cagodoy/tenpo-restaurants-api"
 	"googlemaps.github.io/maps"
@@ -27,7 +26,7 @@ type Restaurants struct {
 }
 
 // ListByCoord ...
-func (us *Restaurants) ListByCoord(coord restaurants.Coord, pageToken string) ([]*restaurants.Restaurant, string, error) {
+func (us *Restaurants) ListByCoord(coord restaurants.Coord, userID string) ([]*restaurants.Restaurant, error) {
 	// get API_KEY env value
 	apiKey := os.Getenv("API_KEY")
 	if apiKey == "" {
@@ -38,27 +37,22 @@ func (us *Restaurants) ListByCoord(coord restaurants.Coord, pageToken string) ([
 	// create new google maps client
 	client, err := maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// parse cood values
-	loc, err := maps.ParseLatLng(coord.Latitude + "," + coord.Longitude)
+	loc, err := maps.ParseLatLng(coord.GetLatLngStr())
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// prepare request
 	r := &maps.NearbySearchRequest{
 		// TODO(ca): get radius value from req param
 		Radius:   5000,
-		Keyword:  "restaurant",
+		Keyword:  "restaurantes",
 		Language: "spanish",
 		Location: &loc,
-	}
-
-	// add pageToken value if present
-	if pageToken != "" {
-		r.PageToken = pageToken
 	}
 
 	// fetch request to google maps api
@@ -70,8 +64,8 @@ func (us *Restaurants) ListByCoord(coord restaurants.Coord, pageToken string) ([
 	// parse response
 	for _, res := range resp.Results {
 		c := restaurants.Coord{
-			Latitude:  strconv.FormatFloat(res.Geometry.Location.Lat, 'f', -1, 64),
-			Longitude: strconv.FormatFloat(res.Geometry.Location.Lng, 'f', -1, 64),
+			Latitude:  res.Geometry.Location.Lat,
+			Longitude: res.Geometry.Location.Lng,
 		}
 
 		restaurant := &restaurants.Restaurant{
@@ -90,15 +84,14 @@ func (us *Restaurants) ListByCoord(coord restaurants.Coord, pageToken string) ([
 	// emit event to history service
 	go func() {
 		he := &history.CreateHistoryEvent{
-			//TODO(ca): get user_id in req param
-			UserID:    "123456",
-			Latitude:  coord.Latitude,
-			Longitude: coord.Latitude,
+			UserID:    userID,
+			Latitude:  coord.GetLatStr(),
+			Longitude: coord.GetLngStr(),
 		}
 
 		us.Nats.Publish("history.create", he)
 		log.Println("Published to History.create service")
 	}()
 
-	return rr, resp.NextPageToken, nil
+	return rr, nil
 }
