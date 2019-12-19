@@ -11,6 +11,7 @@ import (
 
 	history "github.com/cagodoy/tenpo-history-api"
 	nats "github.com/nats-io/nats.go"
+	// "github.com/kr/pretty"
 )
 
 // NewRestaurants ...
@@ -69,13 +70,19 @@ func (us *Restaurants) ListByCoord(coord restaurants.Coord, userID string) ([]*r
 		}
 
 		restaurant := &restaurants.Restaurant{
-			ID:             res.PlaceID,
-			Name:           res.Name,
-			Address:        res.Vicinity,
-			Rating:         fmt.Sprintf("%f", res.Rating),
-			Open:           *res.OpeningHours.OpenNow,
-			PhotoReference: res.Photos[0].PhotoReference,
-			Coord:          c,
+			ID:      res.PlaceID,
+			Name:    res.Name,
+			Address: res.Vicinity,
+			Rating:  fmt.Sprintf("%f", res.Rating),
+			Coord:   c,
+		}
+
+		if res.OpeningHours != nil {
+			restaurant.Open = *res.OpeningHours.OpenNow
+		}
+
+		if res.Photos != nil {
+			restaurant.PhotoReference = res.Photos[0].PhotoReference
 		}
 
 		rr = append(rr, restaurant)
