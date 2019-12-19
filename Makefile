@@ -8,7 +8,7 @@
 #
 # Internal variables
 #
-VERSION=0.0.3
+VERSION=0.0.5
 SVC=tenpo-restaurants-api
 BIN_PATH=$(PWD)/bin
 BIN=$(BIN_PATH)/$(SVC)
